@@ -30,9 +30,11 @@ case class TileKinds(seq :Seq[TileKind.Value]) {
     else None
   }
 
-  def getKotsu() :Seq[(TileKinds,Part)] = {
+  def searchKotsu() :Seq[(TileKinds,Part)] = {
     TileKind.values.toList.map( k => getKotsu(k) ).collect({ case Some(f) => f })
   }
+
+
   def getShuntsu( kind :TileKind.Value) :Option[(TileKinds,Part)] = {
     if (kind.isHonor) return None
     if (kind.rank >= 8) return None
@@ -41,7 +43,7 @@ case class TileKinds(seq :Seq[TileKind.Value]) {
     if (seq.contains(kind) && seq.contains(kind2) && seq.contains(kind3)) Option((this.remove(kind).remove(kind2).remove(kind3), Shuntsu(kind,false)))
     else None
   }
-  def getShuntsu() :Seq[(TileKinds,Part)] = {
+  def searchShuntsu() :Seq[(TileKinds,Part)] = {
     TileKind.values.toList.map( k => getShuntsu(k) ).collect({ case Some(f) => f })
   }
   def getHead( kind :TileKind.Value ) :Option[(TileKinds,Part)] = {
@@ -49,7 +51,7 @@ case class TileKinds(seq :Seq[TileKind.Value]) {
     else None
   }
 
-  def getHead() :Seq[(TileKinds,Part)] = {
+  def searchHead() :Seq[(TileKinds,Part)] = {
     TileKind.values.toList.map( k => getHead(k) ).collect({ case Some(f) => f })
   }
   def getPenchan( kind :TileKind.Value) :Option[(TileKinds,Part)] = {
@@ -63,7 +65,7 @@ case class TileKinds(seq :Seq[TileKind.Value]) {
     if (seq.contains(kind2) && seq.contains(kind3)) Option((this.remove(kind2).remove(kind3), Penchan(kind)))
     else None
   }
-  def getPenchan() :Seq[(TileKinds,Part)] = {
+  def searchPenchan() :Seq[(TileKinds,Part)] = {
     TileKind.values.toList.map( k => getPenchan(k) ).collect({ case Some(f) => f })
   }
   def getRyanmen( kind :TileKind.Value) :Option[(TileKinds,Part)] = {
@@ -74,7 +76,7 @@ case class TileKinds(seq :Seq[TileKind.Value]) {
     if (seq.contains(kind2) && seq.contains(kind3)) Option((this.remove(kind2).remove(kind3), Ryanmen(kind)))
     else None
   }
-  def getRyanmen() :Seq[(TileKinds,Part)] = {
+  def searchRyanmen() :Seq[(TileKinds,Part)] = {
     TileKind.values.toList.map( k => getRyanmen(k) ).collect({ case Some(f) => f })
   }
   def getKanchan( kind :TileKind.Value) :Option[(TileKinds,Part)] = {
@@ -85,18 +87,18 @@ case class TileKinds(seq :Seq[TileKind.Value]) {
     if (seq.contains(kind2) && seq.contains(kind3)) Option((this.remove(kind2).remove(kind3), Kanchan(kind)))
     else None
   }
-  def getKanchan() :Seq[(TileKinds,Part)] = {
+  def searchKanchan() :Seq[(TileKinds,Part)] = {
     TileKind.values.toList.map( k => getKanchan(k) ).collect({ case Some(f) => f })
   }
   def getTanki( kind :TileKind.Value ) :Option[(TileKinds,Part)] = {
     if (seq.count(k=>{k==kind})>=1) Option((this.remove(kind), Tanki(kind)))
     else None
   }
-  def getTanki() :Seq[(TileKinds,Part)] = {
+  def searchTanki() :Seq[(TileKinds,Part)] = {
     TileKind.values.toList.map( k => getTanki(k) ).collect({ case Some(f) => f })
   }
-  def getMentsu() :Seq[(TileKinds,Part)] = getKotsu ++ getShuntsu
-  def getTaatsu() :Seq[(TileKinds,Part)] = getPenchan ++ getRyanmen ++ getKanchan
+  def searchMentsu() :Seq[(TileKinds,Part)] = searchKotsu ++ searchShuntsu
+  def searchTaatsu() :Seq[(TileKinds,Part)] = searchPenchan ++ searchRyanmen ++ searchKanchan
 
   def fString = {
     val manzuSeq = seq.filter(kind => { kind.category == TileCategory.MANZU }).map( kind => kind.rank )
@@ -118,31 +120,31 @@ case class Node(remainingTileKinds :TileKinds, parts: Seq[Part], isTenpai :Boole
     remainingTileKinds.length match {
       case 0 => Seq[Node]()
       case 1 => {
-        remainingTileKinds.getTanki().map(pair => {
+        remainingTileKinds.searchTanki().map(pair => {
           val (nextTileKinds, nextPart) = pair
           Node(nextTileKinds, nextPart +: parts, true)
         })
       }
       case 2 => {
-        remainingTileKinds.getTaatsu().map(pair => {
+        remainingTileKinds.searchTaatsu().map(pair => {
           val (nextTileKinds, nextPart) = pair
           Node(nextTileKinds, nextPart +: parts, true)
-        }) ++ remainingTileKinds.getHead().map(pair => {
+        }) ++ remainingTileKinds.searchHead().map(pair => {
           val (nextTileKinds, nextPart) = pair
           Node(nextTileKinds, nextPart +: parts, true)
         })
       }
       case 4 => {
-        remainingTileKinds.getMentsu().map(pair => {
+        remainingTileKinds.searchMentsu().map(pair => {
           val (nextTileKinds, nextPart) = pair
           Node(nextTileKinds, nextPart +: parts, false)
-        }) ++ remainingTileKinds.getHead().map(pair => {
+        }) ++ remainingTileKinds.searchHead().map(pair => {
           val (nextTileKinds, nextPart) = pair
           Node(nextTileKinds, nextPart +: parts, false)
         })
       }
       case _ => {
-        remainingTileKinds.getMentsu().map(pair => {
+        remainingTileKinds.searchMentsu().map(pair => {
           val (nextTileKinds, nextPart) = pair
           Node(nextTileKinds, nextPart +: parts, false)
         })
