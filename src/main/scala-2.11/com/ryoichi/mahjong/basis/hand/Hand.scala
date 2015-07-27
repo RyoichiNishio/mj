@@ -10,8 +10,18 @@ import scala.collection.mutable.ListBuffer
 case class Hand(tiles :Seq[Tile]) {
   val kinds :TileKinds= TileKinds(tiles.map( tile => tile.kind ).sorted)
   def fString = kinds.fString
-  def getTenpai :Seq[ReadyHand] = Node(kinds, Seq[Part](), false).getTenpaiForms()
-
+  private val node = Node(kinds, Seq[Part](), (0,TileKind.M1))
+  def getTenpai :Seq[ReadyHand] = node.getTenpaiForms()
+  def minShanten :Int = node.minShanten()
+  def minShantenForms :Seq[Seq[Part]] = node.minShantenForms()
+  def acceptableKinds :Seq[TileKind.Value] = {
+    val currentS = minShanten
+    TileKind.values.toList.filter( k => {
+      println(k)
+      val nextHands = Range(0,13).map( i => Hand(tiles.updated(i, Tile(k.id*4))))
+      currentS > nextHands.map( nh => nh.minShanten ).min
+    })
+  }
 }
 
 case class TileKinds(seq :Seq[TileKind.Value]) {
@@ -30,10 +40,13 @@ case class TileKinds(seq :Seq[TileKind.Value]) {
     else None
   }
 
-  def searchKotsu() :Seq[(TileKinds,Part)] = {
-    TileKind.values.toList.map( k => getKotsu(k) ).collect({ case Some(f) => f })
+  def searchKotsu( kind :TileKind.Value) :Seq[(TileKinds,Part)] = {
+    TileKind.values.toList.filter( k => k >= kind ).map( k => getKotsu(k) ).collect({ case Some(f) => f })
   }
 
+  def searchKotsu() :Seq[(TileKinds,Part)] = {
+    searchKotsu(TileKind.M1)
+  }
 
   def getShuntsu( kind :TileKind.Value) :Option[(TileKinds,Part)] = {
     if (kind.isHonor) return None
@@ -43,17 +56,25 @@ case class TileKinds(seq :Seq[TileKind.Value]) {
     if (seq.contains(kind) && seq.contains(kind2) && seq.contains(kind3)) Option((this.remove(kind).remove(kind2).remove(kind3), Shuntsu(kind,false)))
     else None
   }
-  def searchShuntsu() :Seq[(TileKinds,Part)] = {
-    TileKind.values.toList.map( k => getShuntsu(k) ).collect({ case Some(f) => f })
+  def searchShuntsu( kind :TileKind.Value ) :Seq[(TileKinds,Part)] = {
+    TileKind.values.toList.filter( k => k >= kind ).map( k => getShuntsu(k) ).collect({ case Some(f) => f })
   }
-  def getHead( kind :TileKind.Value ) :Option[(TileKinds,Part)] = {
+  def searchShuntsu() :Seq[(TileKinds,Part)] = {
+    searchShuntsu( TileKind.M1 )
+  }
+
+  def getToitsu( kind :TileKind.Value ) :Option[(TileKinds,Part)] = {
     if (seq.count(k=>{k==kind})>=2) Option((this.remove(kind).remove(kind), Head(kind)))
     else None
   }
 
-  def searchHead() :Seq[(TileKinds,Part)] = {
-    TileKind.values.toList.map( k => getHead(k) ).collect({ case Some(f) => f })
+  def searchToitsu( kind :TileKind.Value ) :Seq[(TileKinds,Part)] = {
+    TileKind.values.toList.filter( k => k >= kind ).map( k => getToitsu(k) ).collect({ case Some(f) => f })
   }
+  def searchToitsu( ) :Seq[(TileKinds,Part)] = {
+    searchToitsu( TileKind.M1)
+  }
+
   def getPenchan( kind :TileKind.Value) :Option[(TileKinds,Part)] = {
     if (kind.isHonor) return None
     if (kind.rank != 3 && kind.rank != 7 ) return None
@@ -65,37 +86,51 @@ case class TileKinds(seq :Seq[TileKind.Value]) {
     if (seq.contains(kind2) && seq.contains(kind3)) Option((this.remove(kind2).remove(kind3), Penchan(kind)))
     else None
   }
-  def searchPenchan() :Seq[(TileKinds,Part)] = {
-    TileKind.values.toList.map( k => getPenchan(k) ).collect({ case Some(f) => f })
+  def searchPenchan( kind :TileKind.Value) :Seq[(TileKinds,Part)] = {
+    TileKind.values.toList.filter(k => k >= kind).map( k => getPenchan(k) ).collect({ case Some(f) => f })
   }
+  def searchPenchan() :Seq[(TileKinds,Part)] = {
+    searchPenchan( TileKind.M1)
+  }
+
   def getRyanmen( kind :TileKind.Value) :Option[(TileKinds,Part)] = {
     if (kind.isHonor) return None
-    if (kind.rank == 7 || kind.rank == 8 ) return None
+    if (kind.rank == 7 || kind.rank == 8 || kind.rank == 9 ) return None
     val id = kind.id
     val (kind2, kind3) = (TileKind(id + 1), TileKind(id + 2))
     if (seq.contains(kind2) && seq.contains(kind3)) Option((this.remove(kind2).remove(kind3), Ryanmen(kind)))
     else None
   }
-  def searchRyanmen() :Seq[(TileKinds,Part)] = {
-    TileKind.values.toList.map( k => getRyanmen(k) ).collect({ case Some(f) => f })
+  def searchRyanmen( kind :TileKind.Value ) :Seq[(TileKinds,Part)] = {
+    TileKind.values.toList.filter( k => k>=kind ).map( k => getRyanmen(k) ).collect({ case Some(f) => f })
+  }
+  def searchRyanmen( ) :Seq[(TileKinds,Part)] = {
+    searchRyanmen( TileKind.M1 )
   }
   def getKanchan( kind :TileKind.Value) :Option[(TileKinds,Part)] = {
     if (kind.isHonor) return None
-    if (kind.rank == 1 || kind.rank != 9 ) return None
+    if (kind.rank == 1 || kind.rank == 9 ) return None
     val id = kind.id
     val (kind2, kind3) = (TileKind(id - 1), TileKind(id + 1))
     if (seq.contains(kind2) && seq.contains(kind3)) Option((this.remove(kind2).remove(kind3), Kanchan(kind)))
     else None
   }
-  def searchKanchan() :Seq[(TileKinds,Part)] = {
-    TileKind.values.toList.map( k => getKanchan(k) ).collect({ case Some(f) => f })
+  def searchKanchan( kind :TileKind.Value ) :Seq[(TileKinds,Part)] = {
+    TileKind.values.toList.filter( k => k >= kind ).map( k => getKanchan(k) ).collect({ case Some(f) => f })
   }
-  def getTanki( kind :TileKind.Value ) :Option[(TileKinds,Part)] = {
-    if (seq.count(k=>{k==kind})>=1) Option((this.remove(kind), Tanki(kind)))
+  def searchKanchan() :Seq[(TileKinds,Part)] = {
+    searchKanchan( TileKind.M1 )
+  }
+
+  def getUki( kind :TileKind.Value ) :Option[(TileKinds,Part)] = {
+    if (seq.count(k=>{k==kind})>=1) Option((this.remove(kind), Uki(kind)))
     else None
   }
-  def searchTanki() :Seq[(TileKinds,Part)] = {
-    TileKind.values.toList.map( k => getTanki(k) ).collect({ case Some(f) => f })
+  def searchUki( kind : TileKind.Value ) :Seq[(TileKinds,Part)] = {
+    TileKind.values.toList.filter( k => k >= kind ).map( k => getUki(k) ).collect({ case Some(f) => f })
+  }
+  def searchUki() :Seq[(TileKinds,Part)] = {
+    searchUki( TileKind.M1 )
   }
   def searchMentsu() :Seq[(TileKinds,Part)] = searchKotsu ++ searchShuntsu
   def searchTaatsu() :Seq[(TileKinds,Part)] = searchPenchan ++ searchRyanmen ++ searchKanchan
@@ -113,52 +148,144 @@ case class TileKinds(seq :Seq[TileKind.Value]) {
 
 }
 
-case class Node(remainingTileKinds :TileKinds, parts: Seq[Part], isTenpai :Boolean) {
-  def this(remainingTileKinds :TileKinds) = this(remainingTileKinds, Seq[Part](),false)
-  if (remainingTileKinds.length % 3 != 1 && remainingTileKinds.length != 2 && remainingTileKinds.length != 0) throw new RuntimeException
+case class Node(remainingTileKinds :TileKinds, parts: Seq[Part], searchedPart : (Int, TileKind.Value)) {
+  def this(remainingTileKinds :TileKinds) = this(remainingTileKinds, Seq[Part](), (0, TileKind.M1))
   val childNodes :Seq[Node] = {
-    remainingTileKinds.length match {
-      case 0 => Seq[Node]()
-      case 1 => {
-        remainingTileKinds.searchTanki().map(pair => {
+    if (remainingTileKinds.length == 0) Seq[Node]()
+    val kotsuNodes = searchedPart match {
+      case (0, kind) =>
+        remainingTileKinds.searchKotsu(kind).map(pair => {
           val (nextTileKinds, nextPart) = pair
-          Node(nextTileKinds, nextPart +: parts, true)
+          Node(nextTileKinds, nextPart +: parts, (0, nextPart.kind))
         })
-      }
-      case 2 => {
-        remainingTileKinds.searchTaatsu().map(pair => {
+      case _ => Seq[Node]()
+    }
+    val shuntsuNodes = searchedPart match {
+      case (0, kind) => remainingTileKinds.searchShuntsu().map(pair => {
           val (nextTileKinds, nextPart) = pair
-          Node(nextTileKinds, nextPart +: parts, true)
-        }) ++ remainingTileKinds.searchHead().map(pair => {
-          val (nextTileKinds, nextPart) = pair
-          Node(nextTileKinds, nextPart +: parts, true)
+          Node(nextTileKinds, nextPart +: parts, (1, nextPart.kind))
         })
-      }
-      case 4 => {
-        remainingTileKinds.searchMentsu().map(pair => {
-          val (nextTileKinds, nextPart) = pair
-          Node(nextTileKinds, nextPart +: parts, false)
-        }) ++ remainingTileKinds.searchHead().map(pair => {
-          val (nextTileKinds, nextPart) = pair
-          Node(nextTileKinds, nextPart +: parts, false)
-        })
-      }
-      case _ => {
-        remainingTileKinds.searchMentsu().map(pair => {
-          val (nextTileKinds, nextPart) = pair
-          Node(nextTileKinds, nextPart +: parts, false)
-        })
-      }
+      case (1, kind) =>
+    remainingTileKinds.searchShuntsu(kind).map(pair => {
+      val (nextTileKinds, nextPart) = pair
+      Node(nextTileKinds, nextPart +: parts, (1, nextPart.kind))
+    })
+      case _ => Seq[Node]()
+  }
+    val toitsuNodes = searchedPart match {
+      case (i, kind) if i <= 1 => remainingTileKinds.searchToitsu().map(pair => {
+        val (nextTileKinds, nextPart) = pair
+        Node(nextTileKinds, nextPart +: parts, (2, nextPart.kind))
+      })
+      case (2, kind) => remainingTileKinds.searchToitsu(kind).map(pair => {
+        val (nextTileKinds, nextPart) = pair
+        Node(nextTileKinds, nextPart +: parts, (2, nextPart.kind))
+      })
+      case _ => Seq[Node]()
+    }
+    val penchanNodes = searchedPart match {
+      case (i, kind) if i <= 2 => remainingTileKinds.searchPenchan().map(pair => {
+        val (nextTileKinds, nextPart) = pair
+        Node(nextTileKinds, nextPart +: parts, (3, nextPart.kind))
+      })
+      case (3, kind) => remainingTileKinds.searchPenchan(kind).map(pair => {
+        val (nextTileKinds, nextPart) = pair
+        Node(nextTileKinds, nextPart +: parts, (3, nextPart.kind))
+      })
+      case _ => Seq[Node]()
+    }
+    val ryanmenNodes = searchedPart match {
+      case (i, kind) if i <= 3 => remainingTileKinds.searchRyanmen().map(pair => {
+        val (nextTileKinds, nextPart) = pair
+        Node(nextTileKinds, nextPart +: parts, (4, nextPart.kind))
+      })
+      case (4, kind) => remainingTileKinds.searchRyanmen(kind).map(pair => {
+        val (nextTileKinds, nextPart) = pair
+        Node(nextTileKinds, nextPart +: parts, (4, nextPart.kind))
+      })
+      case _ => Seq[Node]()
+    }
+    val kanchanNodes = searchedPart match {
+      case (i, kind) if i <= 4 => remainingTileKinds.searchKanchan().map(pair => {
+        val (nextTileKinds, nextPart) = pair
+        Node(nextTileKinds, nextPart +: parts, (5, nextPart.kind))
+      })
+      case (5, kind) => remainingTileKinds.searchKanchan(kind).map(pair => {
+        val (nextTileKinds, nextPart) = pair
+        Node(nextTileKinds, nextPart +: parts, (5, nextPart.kind))
+      })
+      case _ => Seq[Node]()
+    }
+    val ukiNodes = searchedPart match {
+      case (i, kind) if i <= 5 => remainingTileKinds.searchUki().map(pair => {
+        val (nextTileKinds, nextPart) = pair
+        Node(nextTileKinds, nextPart +: parts, (6, nextPart.kind))
+      })
+      case (6, kind) => remainingTileKinds.searchUki(kind).map(pair => {
+        val (nextTileKinds, nextPart) = pair
+        Node(nextTileKinds, nextPart +: parts, (6, nextPart.kind))
+      })
+      case _ => Seq[Node]()
+    }
+    kotsuNodes ++ shuntsuNodes ++ toitsuNodes ++ penchanNodes ++ ryanmenNodes ++ kanchanNodes ++ ukiNodes
+  }
+
+  def countParts() :Option[(Int,Int,Int)] = {
+    if (remainingTileKinds.length > 0) return None
+    else {
+      val mentsu = parts.count( p => p.isMentsu )
+      val toitsu = parts.count( p => p.isHead )
+      val taatsu = parts.count( p => p.isTaatsu )
+      return Option(mentsu, toitsu, taatsu)
     }
   }
-  def traverse(x :ListBuffer[Seq[Part]]) :ListBuffer[Seq[Part]] = {
-    childNodes.foreach( c => c.traverse(x) )
-    if (isTenpai)  {
+  def isTenpai() : Boolean = {
+    if (countParts().isEmpty) return false
+    if (shanten.get == 0) true else false
+  }
+  def shanten() : Option[Int] = {
+    if (countParts().isEmpty) return None
+    val (mentsu, toitsu, taatsu) = countParts().get
+    val primitiveShanten = if (toitsu >= 1) {
+      List(0, 5-mentsu-toitsu-taatsu).max + 3-mentsu
+    } else {
+      List(0,4-mentsu-taatsu).max + 4-mentsu
+    }
+    val shantenSu = if (primitiveShanten > 0) {primitiveShanten}
+    else if (parts.filter( p => p.isHead || p.isUki || p.isKotsu ).map( p => p.kind ).groupBy(identity).mapValues(_.size).values.count(x => x>= 2) >= 1 ) {
+      primitiveShanten+1
+    }
+    else primitiveShanten
+    return Option(shantenSu)
+  }
+
+  private def traverseShanten(x :ListBuffer[Int]) :ListBuffer[Int] = {
+    childNodes.foreach( c => c.traverseShanten(x) )
+    if (shanten.nonEmpty) {x += shanten().get }
+    x
+  }
+
+  private def traverseShantenForms(s :Int, x :ListBuffer[Seq[Part]]) :ListBuffer[Seq[Part]] = {
+    childNodes.foreach( c => c.traverseShantenForms(s, x) )
+    if (shanten.nonEmpty && shanten.get == s )  {
       x += parts.toList
     }
     x
   }
+
+  private def traverseTenpai(x :ListBuffer[Seq[Part]]) :ListBuffer[Seq[Part]] = {
+    traverseShantenForms(0,x)
+  }
+
+
   def getTenpaiForms() :Seq[ReadyHand] = {
-    traverse(ListBuffer[Seq[Part]]()).map( parts => parts.sorted ).distinct.toList.map( parts => new ReadyHand(parts))
+    traverseTenpai(ListBuffer[Seq[Part]]()).toList.map( parts => new ReadyHand(parts))
+  }
+  def minShanten() :Int = {
+    traverseShanten(ListBuffer[Int]()).min
+  }
+  def minShantenForms() :List[Seq[Part]] = {
+    val ms = minShanten()
+    traverseShantenForms(ms, ListBuffer[Seq[Part]]()).toList
   }
 }

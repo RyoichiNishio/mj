@@ -16,7 +16,7 @@ abstract class Part extends Ordered[Part]{
   def isPenchan = false
   def isKanchan = false
   def isRyanmen = false
-  def isTanki   = false
+  def isUki   = false
 
   override def compare(that: Part): Int = {
     this.toString.compare(that.toString)
@@ -70,10 +70,10 @@ case class Penchan(kind :TileKind.Value) extends Taatsu {
 }
 case class Ryanmen(kind :TileKind.Value) extends Taatsu {
   if (kind.isHonor) throw new RuntimeException
-  if (kind.rank == 7 || kind.rank == 8 ) throw new RuntimeException
+  if (kind.rank == 7 || kind.rank == 8 || kind.rank == 9 ) throw new RuntimeException
   override def isRyanmen = true
   override def toString = {
-    val ( firstRank, secondRank ) = (kind.rank, kind.rank+1)
+    val ( firstRank, secondRank ) = (kind.rank+1, kind.rank+2)
     "[" + firstRank + secondRank + kind.category.char + "]"
   }
 }
@@ -88,8 +88,8 @@ case class Kanchan(kind :TileKind.Value) extends Taatsu {
     "[" + firstRank + secondRank + kind.category.char + "]"
   }
 }
-case class Tanki(kind :TileKind.Value) extends Part {
-  override def isTanki = true
+case class Uki(kind :TileKind.Value) extends Part {
+  override def isUki = true
   override def toString = kind.isSuit match {
     case ture => "[" + kind.rank + kind.category.char + "]"
     case false => "[" + kind + "]"
