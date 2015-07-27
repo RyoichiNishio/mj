@@ -17,8 +17,10 @@ case class Hand(tiles :Seq[Tile]) {
   def acceptableKinds :Seq[TileKind.Value] = {
     if ( tiles.length != 13 ) throw new RuntimeException
     val currentS = minShanten
+    println(currentS)
     TileKind.values.toList.filter( k => {
       val nextHand = Hand(Tile(k.id*4) +: tiles )
+      println(nextHand.fString)
       currentS > nextHand.minShanten
     })
   }
