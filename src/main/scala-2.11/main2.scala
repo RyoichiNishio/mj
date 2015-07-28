@@ -8,13 +8,13 @@ import java.util.Date
 object Main2 {
   val r = new Random((new Date).getTime)
   def main(args: Array[String]): Unit = {
-    val results = Range(0,100).toList.map( c => count )
+    val results = Range(0,10).toList.map( c => count )
     println(results)
-    println(results.reduce(_+_).toDouble/100)
+    println(results.reduce(_+_).toDouble/10)
   }
 
   def tsumo(yama :Seq[Int], hand : Hand, count :Int) :Int = {
-    println(hand.fString)
+    //println(hand.fString)
     if ( yama.length == 0 ) return count
     val s = hand.minShanten
     if ( s <= 0 ) count
@@ -30,9 +30,12 @@ object Main2 {
   }
 
   def count() :Int = {
+    val t = (new Date).getTime
     val (haipai, yama) = r.shuffle(Range(0, 133).toList).splitAt(14)
     val hand = Hand(haipai.map( i => Tile(i)))
     val count = 0
-    tsumo(yama, hand, count)
+    val result = tsumo(yama, hand, count)
+    println( ((new Date).getTime - t)/1000 )
+    return result
   }
 }

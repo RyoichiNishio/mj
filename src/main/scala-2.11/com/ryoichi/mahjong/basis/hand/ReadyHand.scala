@@ -7,7 +7,7 @@ class ReadyHand(unorderedParts :Seq[Part]) {
   val parts = unorderedParts.sorted
   val category = {
     val nMentsu = parts.count( p => p.isMentsu )
-    val nHead = parts.count( p => p.isHead )
+    val nHead = parts.count( p => p.isToitsu )
     val nTanki = parts.count( p => p.isUki )
     val nTaatsu = parts.count( p => p.isTaatsu )
     (nMentsu,nHead,nTanki,nTaatsu) match {

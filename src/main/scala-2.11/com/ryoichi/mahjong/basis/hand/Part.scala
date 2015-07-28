@@ -12,7 +12,7 @@ abstract class Part extends Ordered[Part]{
   def isTaatsu  = false
   def isKotsu   = false
   def isShuntsu = false
-  def isHead    = false
+  def isToitsu  = false
   def isPenchan = false
   def isKanchan = false
   def isRyanmen = false
@@ -52,8 +52,8 @@ case class Shuntsu(kind :TileKind.Value, isMelded: Boolean) extends Mentsu {
     "(" + leftRank + middleRank + rightRank + char + ")"
   }
 }
-case class Head(kind :TileKind.Value) extends Part {
-  override def isHead = true
+case class Toitsu(kind :TileKind.Value) extends Part {
+  override def isToitsu = true
   override def toString = kind.isSuit match {
     case ture => "<" + kind.rank + kind.rank + kind.category.char + ">"
     case false => "<" + kind + kind + ">"
