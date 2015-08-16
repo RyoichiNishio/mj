@@ -141,6 +141,12 @@ case class Node(remainingTileKinds: TileKinds, parts: Seq[Part], searchedPart: (
     traverseTenpai(ListBuffer[Seq[Part]]()).toList.map(parts => new ReadyHand(parts))
   }
 
+  def getWinningTiles: Set[TileKind.Value] = {
+    val x = getTenpaiForms().map(readyHand => readyHand.winningTiles )
+    if (x.length > 0) x.reduceLeft((a,b) => a++b)
+    else Set()
+  }
+
   def minShanten(): Int = {
     traverseShanten(ListBuffer[Int]()).min
   }

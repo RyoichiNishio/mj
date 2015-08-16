@@ -4,10 +4,10 @@
 可能なすべての局面において、可能なactionをすべて列挙する必要がある。
 
 Game : 半荘戦とか東風戦とかの、1ゲームを表すとする。
-Position : 南2局2本場、などのような、ある1局(配牌から誰かのあがりあるいは流局まで)を表すとする。
+Round : 南2局2本場、などのような、ある1局(配牌から誰かのあがりあるいは流局まで)を表すとする。
 Phase : あるPositionにおいて、playerがactionを選択する場面を指す。Phaseには二つある。
 一つは、一人のplayerが打牌を選択する場面。もう一つは、3人のplayersが仕掛けるかどうかを判断する場面。
-Clearing : 流局あるいは誰かが上がった際に、清算を行う。
+Scoring : 流局あるいは誰かが上がった際に、清算を行う。
 
 Gameの流れ。
 
@@ -40,7 +40,7 @@ Reaction-Phase
 class Phase
     val publicState : PublicState
     val playerStates : List[PlayerState]
-    val latentState : LatentState
+    val wall : Wall
 
 class PublicState
     val gameType :GameType = 東風 or 半荘
@@ -59,9 +59,9 @@ class PlayerState
     private val isFuriten : Boolean
     public val waitingTiles = (13枚の際には、役なしであれ、待ちの牌のリストを計算しておく。)
 
-class LatentState
-    val wall
-    val edge
+class Wall
+    val wallTiles
+    val deadWallTiles
     public val remaingWall = wall.length
 
 class ActionPhase extends Phase
